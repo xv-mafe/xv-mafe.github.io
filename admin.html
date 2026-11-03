@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Panel · XV María Fernanda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:wght@600;700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#F4EEE6; --panel:#FFFDF9; --ink:#3D1A21; --wine:#6E1528; --gold:#C9A14A; --gold-2:#E6C982;
+  --muted:#86696D; --line:#E6D9CC; --field:#FFFFFF; --on-wine:#FBF3EA; --yes:#1E8E4E; --no:#B3261E; --wait:#9A7B2F;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --bg:#1B0E12; --panel:#26141A; --ink:#F1E3DA; --muted:#B89DA1; --line:#3E2329; --field:#1F1015; --wine:#8C2238; --yes:#4CC283; --no:#F2857A; --wait:#E0C070; }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --bg:#1B0E12; --panel:#26141A; --ink:#F1E3DA; --muted:#B89DA1; --line:#3E2329; --field:#1F1015; --wine:#8C2238; --yes:#4CC283; --no:#F2857A; --wait:#E0C070; }
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+header h1{font-family:"Allura","Brush Script MT",cursive;font-weight:400;font-size:2.6rem;line-height:1;margin:0;color:var(--wine)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) header h1{color:var(--gold-2)}}
+:root[data-theme="dark"] header h1{color:var(--gold-2)}
+header .who{color:var(--muted);font-size:.9rem;display:flex;gap:10px;align-items:center}
+h2{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:1.4rem;margin:0 0 10px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+button,.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.primary{background:var(--wine);color:var(--on-wine)}
+.gold{background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#4B1220}
+.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.wa{background:#1FA855;color:#fff}
+.small{padding:6px 10px;font-size:.82rem}
+button:focus-visible,.btn:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input,textarea,select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* login */
+.login{max-width:380px;margin:12vh auto 0;text-align:center}
+.login p{color:var(--muted)}
+
+/* números */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.stat b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:2.6rem;line-height:1;font-weight:700}
+.stat span{color:var(--muted);font-size:.9rem}
+.stat small{display:block;color:var(--muted);font-size:.8rem;margin-top:4px}
+.stat.yes b{color:var(--yes)} .stat.no b{color:var(--no)} .stat.wait b{color:var(--wait)}
+@media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+.bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--line);margin-top:14px}
+.bar i{display:block;height:100%}
+
+/* tabla */
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.tools input{flex:1;min-width:180px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:500;padding:7px 12px}
+.tabs button[aria-pressed="true"]{background:var(--wine);color:var(--on-wine);border-color:var(--wine)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl-wrap{overflow-x:auto}
+.tbl th{text-align:left;font-size:.8rem;color:var(--muted);font-weight:500;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl td.name{font-weight:700}
+.tbl .code{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;color:var(--muted);font-size:.85rem}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.8rem;font-weight:700;white-space:nowrap}
+.pill.yes{background:color-mix(in srgb,var(--yes) 15%,transparent);color:var(--yes)}
+.pill.no{background:color-mix(in srgb,var(--no) 15%,transparent);color:var(--no)}
+.pill.wait{background:color-mix(in srgb,var(--wait) 18%,transparent);color:var(--wait)}
+.tbl .sub{color:var(--muted);font-size:.85rem}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.empty{text-align:center;color:var(--muted);padding:22px}
+
+.songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.songs div{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.songs b{display:block}
+.songs span{color:var(--muted);font-size:.85rem}
+.notes div{border-left:3px solid var(--gold);padding:6px 12px;margin-bottom:10px}
+.notes span{color:var(--muted);font-size:.85rem}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:18px;text-align:center;cursor:pointer;color:var(--muted)}
+.drop.over{border-color:var(--gold)}
+.drop b{color:var(--ink)}
+.msg{margin:8px 0 0;font-size:.9rem}
+.msg.err{color:var(--no)} .msg.ok{color:var(--yes)}
+label{display:block;font-size:.85rem;font-weight:500;margin:10px 0 4px}
+.add{display:grid;grid-template-columns:2fr 70px 1fr auto;gap:8px;align-items:end}
+@media (max-width:560px){.add{grid-template-columns:1fr 1fr}}
+.add input{width:100%}
+textarea{width:100%;min-height:80px;resize:vertical}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+
+.views{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.views button{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:700}
+.views button[aria-pressed="true"]{background:var(--wine);color:var(--on-wine);border-color:var(--wine)}
+.evgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px}
+.evgrid .full{grid-column:1/-1}
+.evgrid input{width:100%}
+.evgrid .hint{color:var(--muted);font-size:.8rem;margin:3px 0 0}
+@media (max-width:620px){.evgrid{grid-template-columns:1fr}}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:10px 0}
+.thumbs figure{margin:0;position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--line)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs button{position:absolute;top:4px;right:4px;width:28px;height:28px;padding:0;justify-content:center;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:1rem}
+.carr h3{margin:0;font-size:1rem}
+.carr p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<div class="login" id="loginView">
+  <h1 style="font-family:Allura,cursive;font-weight:400;font-size:3rem;color:var(--wine);margin:0">Panel de invitaciones</h1>
+  <p>XV años de María Fernanda. Entra con tu cuenta de Google para ver las confirmaciones.</p>
+  <button class="primary" id="loginBtn">Entrar con Google</button>
+  <p class="msg" id="loginMsg"></p>
+</div>
+
+<main class="wrap" id="appView" hidden>
+  <header>
+    <h1>Invitados XV</h1>
+    <div class="who"><a class="btn ghost small" id="viewLink" href="./" target="_blank" rel="noopener">Ver invitación</a><span id="userEmail"></span><button class="ghost small" id="logoutBtn">Salir</button></div>
+  </header>
+  <nav class="views" id="views">
+    <button aria-pressed="true" data-v="vGuests">Invitados y respuestas</button>
+    <button aria-pressed="false" data-v="vEvent">Fiesta y fotos</button>
+  </nav>
+  <div id="vGuests">
+
+  <section class="stats" aria-label="Resumen">
+    <div class="stat yes"><b id="sYes">0</b><span>personas confirmadas</span><small id="sYesInv"></small></div>
+    <div class="stat no"><b id="sNo">0</b><span>no asistirán</span><small>invitaciones</small></div>
+    <div class="stat wait"><b id="sWait">0</b><span>sin responder</span><small id="sWaitP"></small></div>
+    <div class="stat"><b id="sTotal">0</b><span>pases entregados</span><small id="sInv"></small></div>
+  </section>
+  <div class="bar" aria-hidden="true"><i id="bYes" style="background:var(--yes)"></i><i id="bNo" style="background:var(--no)"></i><i id="bWait" style="background:var(--wait)"></i></div>
+
+  <section class="panel">
+    <h2>Lista de invitados</h2>
+    <div class="tools">
+      <input id="search" type="search" placeholder="Buscar por nombre o código" aria-label="Buscar invitado">
+      <div class="tabs" id="tabs">
+        <button aria-pressed="true" data-f="all">Todos</button>
+        <button aria-pressed="false" data-f="yes">Asistirán</button>
+        <button aria-pressed="false" data-f="no">No asistirán</button>
+        <button aria-pressed="false" data-f="wait">Sin responder</button>
+      </div>
+      <button class="gold" id="exportBtn">Descargar Excel</button>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Invitado</th><th>Código</th><th>Pases</th><th>Respuesta</th><th>Canción</th><th>Enviar</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>Canciones sugeridas</h2>
+      <div class="songs" id="songs"></div>
+    </section>
+    <section class="panel">
+      <h2>Mensajes para María Fernanda</h2>
+      <div class="notes" id="notes"></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Agregar invitados</h2>
+    <div class="grid2">
+      <div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Subir Excel de invitados"><b>Subir Excel o CSV</b><br>columnas: Nombre, Pases, Celular</div>
+        <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+        <div class="row" style="margin-top:10px"><button class="ghost small" id="tplBtn">Descargar plantilla</button></div>
+        <p class="msg" id="upMsg"></p>
+      </div>
+      <div>
+        <div class="add">
+          <div><label for="aName">Nombre</label><input id="aName" placeholder="Familia Pérez"></div>
+          <div><label for="aPass">Pases</label><input id="aPass" type="number" min="1" max="20" value="1"></div>
+          <div><label for="aPhone">Celular</label><input id="aPhone" inputmode="tel" placeholder="3001234567"></div>
+          <button class="primary" id="addBtn">Agregar</button>
+        </div>
+        <p class="msg" id="addMsg"></p>
+      </div>
+    </div>
+    <details style="margin-top:14px">
+      <summary style="cursor:pointer;font-weight:500">Mensaje de WhatsApp para enviar la invitación</summary>
+      <label for="tpl">Usa {nombre}, {link} y {codigo}</label>
+      <textarea id="tpl"></textarea>
+    </details>
+  </section>
+  </div>
+
+  <div id="vEvent" hidden>
+    <section class="panel">
+      <h2>Datos de la fiesta</h2>
+      <form id="evForm" class="evgrid">
+        <div><label for="evFecha">Fecha</label><input type="date" id="evFecha" required></div>
+        <div><label for="evHora">Hora de inicio</label><input type="time" id="evHora"><p class="hint">Se usa para la cuenta regresiva.</p></div>
+        <div class="full"><label for="evHorario">Horario que verán los invitados</label><input id="evHorario" placeholder="7:00 p. m. a 1:00 a. m."><p class="hint">Si lo dejas vacío dice "Hora por confirmar".</p></div>
+        <div><label for="evLugar">Lugar</label><input id="evLugar" placeholder="Piscina Herrera"></div>
+        <div><label for="evMapa">Link de Google Maps (opcional)</label><input id="evMapa" placeholder="https://maps.app.goo.gl/..."><p class="hint">Si lo dejas vacío, busca el lugar por su nombre.</p></div>
+        <div><label for="evDressT">Dress code (opcional)</label><input id="evDressT" placeholder="Elegante"></div>
+        <div><label for="evDressX">Detalle del dress code</label><input id="evDressX" placeholder="El color vino queda reservado para la quinceañera"></div>
+        <div class="full"><label for="evRegalo">Datos para regalo (opcional)</label><input id="evRegalo" placeholder="Nequi 300 123 4567"><p class="hint">Si lo dejas vacío, la tarjeta de regalo no aparece.</p></div>
+        <div class="full row" style="margin-top:12px"><button class="primary" type="submit">Guardar cambios</button><span class="msg" id="evMsg" style="margin:0"></span></div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Fotos</h2>
+      <p class="msg" style="color:var(--muted);margin:0 0 6px">Las fotos se achican solas para que la invitación cargue rápido. Aparecen en el orden en que las subes.</p>
+      <div class="grid2">
+        <div class="carr">
+          <h3>Primer carrusel</h3><p>Después del mensaje de bienvenida</p>
+          <div class="thumbs" id="thumbs1"></div>
+          <button class="gold small" data-up="1">Subir fotos</button>
+        </div>
+        <div class="carr">
+          <h3>Segundo carrusel</h3><p>Antes de la confirmación</p>
+          <div class="thumbs" id="thumbs2"></div>
+          <button class="gold small" data-up="2">Subir fotos</button>
+        </div>
+      </div>
+      <input type="file" id="photoFile" accept="image/*" multiple hidden>
+      <p class="msg" id="photoMsg"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Canción</h2>
+      <p class="msg" id="songStatus" style="margin:0">Revisando…</p>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, writeBatch, deleteDoc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig, ADMIN_EMAILS } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app), db = getFirestore(app);
+const $ = id => document.getElementById(id);
+let guests = {}, answers = {}, filter = "all", unsubs = [];
+
+const DEFAULT_TPL = "¡Hola {nombre}! 💌 Con mucha alegría te invito a celebrar mis XV años. Abre tu invitación aquí: {link}";
+try { $("tpl").value = localStorage.getItem("xv-tpl") || DEFAULT_TPL; } catch (e) { $("tpl").value = DEFAULT_TPL; }
+$("tpl").oninput = () => { try { localStorage.setItem("xv-tpl", $("tpl").value); } catch (e) {} render(); };
+
+/* ---------- sesión ---------- */
+$("loginBtn").onclick = async () => {
+  $("loginMsg").textContent = "";
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch (e) { $("loginMsg").className = "msg err"; $("loginMsg").textContent = "No se pudo iniciar sesión. Inténtalo de nuevo."; }
+};
+$("logoutBtn").onclick = () => signOut(auth);
+onAuthStateChanged(auth, user => {
+  unsubs.forEach(u => u()); unsubs = [];
+  const ok = user && ADMIN_EMAILS.map(e => e.toLowerCase()).includes((user.email || "").toLowerCase());
+  $("loginView").hidden = !!ok; $("appView").hidden = !ok;
+  if (user && !ok){ $("loginMsg").className = "msg err"; $("loginMsg").textContent = "El correo " + user.email + " no tiene acceso a este panel."; signOut(auth); return; }
+  if (!ok) return;
+  $("userEmail").textContent = user.email;
+  const fail = () => toast("No se pudieron leer los datos. Revisa las reglas de Firestore.");
+  unsubs.push(onSnapshot(collection(db, "invitados"), s => { guests = {}; s.forEach(d => guests[d.id] = d.data()); render(); }, fail));
+  unsubs.push(onSnapshot(collection(db, "respuestas"), s => { answers = {}; s.forEach(d => answers[d.id] = d.data()); render(); }, fail));
+  unsubs.push(onSnapshot(query(collection(db, "fotos"), orderBy("orden")), renderPhotos, fail));
+  loadEvent();
+});
+
+/* ---------- utilidades ---------- */
+const ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+function newCode(){
+  let c;
+  do { c = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => ALPHA[b % ALPHA.length]).join(""); } while (guests[c]);
+  return c;
+}
+const phone = v => { let d = String(v || "").replace(/\D/g, ""); if (d.length === 10 && d[0] === "3") d = "57" + d; return d; };
+const BASE = new URL("./", location.href).href;
+const linkFor = c => BASE + "?i=" + c;
+const msgFor = (c, g) => $("tpl").value.replaceAll("{nombre}", g.nombre).replaceAll("{link}", linkFor(c)).replaceAll("{codigo}", c);
+const waFor = (c, g) => "https://wa.me/" + (g.celular || "") + "?text=" + encodeURIComponent(msgFor(c, g));
+const status = c => !answers[c] ? "wait" : answers[c].asiste ? "yes" : "no";
+const fmtDate = t => t && t.toDate ? t.toDate().toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2200); }
+async function copy(text){
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.append(ta); ta.select(); try { document.execCommand("copy"); } catch (_) {} ta.remove(); }
+  toast("Copiado");
+}
+
+/* ---------- pintar ---------- */
+function render(){
+  const codes = Object.keys(guests);
+  let yesP = 0, yesI = 0, noI = 0, waitI = 0, waitP = 0, total = 0;
+  codes.forEach(c => {
+    const p = guests[c].pases || 1; total += p;
+    const s = status(c);
+    if (s === "yes"){ yesP += answers[c].personas || 0; yesI++; }
+    else if (s === "no") noI++;
+    else { waitI++; waitP += p; }
+  });
+  $("sYes").textContent = yesP; $("sYesInv").textContent = yesI + (yesI === 1 ? " invitación" : " invitaciones");
+  $("sNo").textContent = noI;
+  $("sWait").textContent = waitI; $("sWaitP").textContent = waitP + (waitP === 1 ? " persona posible" : " personas posibles");
+  $("sTotal").textContent = total; $("sInv").textContent = codes.length + " invitaciones";
+  const n = codes.length || 1;
+  $("bYes").style.width = (yesI / n * 100) + "%"; $("bNo").style.width = (noI / n * 100) + "%"; $("bWait").style.width = (waitI / n * 100) + "%";
+
+  const q = $("search").value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const rows = codes
+    .filter(c => filter === "all" || status(c) === filter)
+    .filter(c => !q || (guests[c].nombre + " " + c).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q))
+    .sort((a, b) => guests[a].nombre.localeCompare(guests[b].nombre, "es"));
+  const tb = $("tbody"); tb.innerHTML = "";
+  if (!rows.length){ tb.innerHTML = `<tr><td colspan="6" class="empty">${codes.length ? "Ningún invitado coincide con el filtro." : "Aún no hay invitados. Súbelos con el Excel o agrégalos abajo."}</td></tr>`; }
+  rows.forEach(c => {
+    const g = guests[c], a = answers[c], s = status(c);
+    const tr = document.createElement("tr");
+    const td = (cls, text) => { const el = document.createElement("td"); if (cls) el.className = cls; if (text !== undefined) el.textContent = text; tr.append(el); return el; };
+    const nm = td("name", g.nombre);
+    if (g.celular){ const sub = document.createElement("div"); sub.className = "sub"; sub.style.fontWeight = 400; sub.textContent = "+" + g.celular; nm.append(sub); }
+    td("code", c);
+    td("", g.pases || 1);
+    const st = td("");
+    const pill = document.createElement("span"); pill.className = "pill " + s;
+    pill.textContent = s === "yes" ? `Sí · ${a.personas} ${a.personas === 1 ? "persona" : "personas"}` : s === "no" ? "No asistirá" : "Sin responder";
+    st.append(pill);
+    if (a && a.fecha){ const d = document.createElement("div"); d.className = "sub"; d.textContent = fmtDate(a.fecha); st.append(d); }
+    td("", a && a.cancion ? a.cancion : "");
+    const acts = td(""); const box = document.createElement("div"); box.className = "acts"; acts.append(box);
+    const w = document.createElement("a"); w.className = "btn wa small"; w.textContent = "WhatsApp"; w.href = waFor(c, g); w.target = "_blank"; w.rel = "noopener";
+    const cp = document.createElement("button"); cp.className = "ghost small"; cp.textContent = "Copiar"; cp.onclick = () => copy(msgFor(c, g));
+    const del = document.createElement("button"); del.className = "ghost small"; del.textContent = "Eliminar";
+    del.onclick = async () => {
+      if (!confirm(`¿Eliminar a ${g.nombre}? Su link dejará de funcionar y se borrará su respuesta.`)) return;
+      try { await deleteDoc(doc(db, "respuestas", c)); await deleteDoc(doc(db, "invitados", c)); toast("Invitado eliminado"); }
+      catch (e) { toast("No se pudo eliminar. Inténtalo de nuevo."); }
+    };
+    box.append(w, cp, del);
+    tb.append(tr);
+  });
+
+  const songs = codes.filter(c => answers[c] && answers[c].cancion);
+  $("songs").innerHTML = songs.length ? "" : '<p class="empty">Todavía no hay canciones sugeridas.</p>';
+  songs.forEach(c => { const d = document.createElement("div"); const b = document.createElement("b"); b.textContent = answers[c].cancion; const s = document.createElement("span"); s.textContent = guests[c].nombre; d.append(b, s); $("songs").append(d); });
+  const notes = codes.filter(c => answers[c] && answers[c].mensaje);
+  $("notes").innerHTML = notes.length ? "" : '<p class="empty">Todavía no hay mensajes.</p>';
+  notes.forEach(c => { const d = document.createElement("div"); const p = document.createElement("p"); p.style.margin = 0; p.textContent = answers[c].mensaje; const s = document.createElement("span"); s.textContent = guests[c].nombre; d.append(p, s); $("notes").append(d); });
+}
+$("search").oninput = render;
+$("tabs").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  filter = b.dataset.f;
+  [...$("tabs").children].forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+};
+
+/* ---------- agregar invitados ---------- */
+async function addMany(list, msgEl){
+  const existing = new Set(Object.values(guests).map(g => g.nombre.toLowerCase()));
+  const fresh = list.filter(g => !existing.has(g.nombre.toLowerCase()));
+  const skipped = list.length - fresh.length;
+  if (!fresh.length){ msgEl.className = "msg err"; msgEl.textContent = skipped ? "Todos esos invitados ya estaban en la lista." : "No encontré nombres para agregar."; return; }
+  try {
+    for (let i = 0; i < fresh.length; i += 400){
+      const batch = writeBatch(db);
+      fresh.slice(i, i + 400).forEach(g => {
+        const c = newCode(); guests[c] = g;   // reserva el código
+        batch.set(doc(db, "invitados", c), { nombre: g.nombre, pases: g.pases, celular: g.celular, creado: serverTimestamp() });
+      });
+      await batch.commit();
+    }
+    msgEl.className = "msg ok";
+    msgEl.textContent = `${fresh.length} ${fresh.length === 1 ? "invitado agregado" : "invitados agregados"}` + (skipped ? ` (${skipped} ya existían y no se repitieron).` : ".");
+  } catch (e) { msgEl.className = "msg err"; msgEl.textContent = "No se pudo guardar. Revisa tu conexión y las reglas de Firestore."; }
+}
+function fromRows(rows){
+  rows = rows.filter(r => r && r.some(c => String(c ?? "").trim() !== ""));
+  if (!rows.length) return [];
+  let iN = 0, iP = 1, iC = 2, start = 0;
+  const head = rows[0].map(c => String(c ?? "").toLowerCase());
+  if (head.some(h => /nombre|invitad/.test(h))){
+    iN = head.findIndex(h => /nombre|invitad/.test(h));
+    iP = head.findIndex(h => /pase|cupo|persona/.test(h));
+    iC = head.findIndex(h => /cel|tel|whats|n[uú]mero/.test(h));
+    start = 1;
+  }
+  return rows.slice(start).map(r => ({
+    nombre: String(r[iN] ?? "").trim().replace(/\s+/g, " "),
+    pases: Math.min(20, Math.max(1, parseInt(iP >= 0 ? r[iP] : 1, 10) || 1)),
+    celular: iC >= 0 ? phone(r[iC]) : ""
+  })).filter(g => g.nombre);
+}
+function readFile(file){
+  const m = $("upMsg"); m.className = "msg"; m.textContent = "Leyendo " + file.name + "…";
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const wb = XLSX.read(fr.result, { type: "array" });
+      const list = fromRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false }));
+      if (!list.length){ m.className = "msg err"; m.textContent = "No encontré nombres. La primera columna debe tener el nombre de cada invitado."; return; }
+      addMany(list, m);
+    } catch (e) { m.className = "msg err"; m.textContent = "No pude leer ese archivo. Usa la plantilla de Excel o un CSV."; }
+  };
+  fr.readAsArrayBuffer(file);
+}
+const drop = $("drop");
+drop.onclick = () => $("file").click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); $("file").click(); } };
+$("file").onchange = e => { const f = e.target.files[0]; if (f) readFile(f); e.target.value = ""; };
+["dragenter","dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+
+$("addBtn").onclick = () => {
+  const nombre = $("aName").value.trim().replace(/\s+/g, " ");
+  if (!nombre){ $("addMsg").className = "msg err"; $("addMsg").textContent = "Escribe el nombre del invitado."; $("aName").focus(); return; }
+  addMany([{ nombre, pases: Math.min(20, Math.max(1, parseInt($("aPass").value, 10) || 1)), celular: phone($("aPhone").value) }], $("addMsg"))
+    .then(() => { if ($("addMsg").classList.contains("ok")){ $("aName").value = ""; $("aPhone").value = ""; $("aPass").value = 1; $("aName").focus(); } });
+};
+
+/* ---------- Excel ---------- */
+$("tplBtn").onclick = () => {
+  const ws = XLSX.utils.aoa_to_sheet([["Nombre","Pases","Celular"],["Familia Pérez",4,"3001234567"],["Tía Rosa",2,""],["Juan Camilo Ruiz",1,""]]);
+  ws["!cols"] = [{ wch: 32 }, { wch: 8 }, { wch: 16 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Invitados");
+  XLSX.writeFile(wb, "plantilla-invitados-XV.xlsx");
+};
+$("exportBtn").onclick = () => {
+  const rows = [["Nombre","Código","Pases","Celular","Respuesta","Personas","Canción","Mensaje","Fecha de respuesta","Link"]];
+  Object.keys(guests).sort((a, b) => guests[a].nombre.localeCompare(guests[b].nombre, "es")).forEach(c => {
+    const g = guests[c], a = answers[c], s = status(c);
+    rows.push([g.nombre, c, g.pases || 1, g.celular ? "+" + g.celular : "", s === "yes" ? "Sí" : s === "no" ? "No" : "Sin responder",
+      a ? a.personas : "", a ? a.cancion || "" : "", a ? a.mensaje || "" : "", a && a.fecha && a.fecha.toDate ? a.fecha.toDate().toLocaleString("es-CO") : "", linkFor(c)]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [{ wch: 28 }, { wch: 9 }, { wch: 6 }, { wch: 15 }, { wch: 13 }, { wch: 9 }, { wch: 28 }, { wch: 40 }, { wch: 20 }, { wch: 40 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Invitados");
+  XLSX.writeFile(wb, "confirmaciones-XV-Maria-Fernanda.xlsx");
+};
+
+/* ---------- vistas ---------- */
+$("views").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  [...$("views").children].forEach(x => { x.setAttribute("aria-pressed", x === b); $(x.dataset.v).hidden = x !== b; });
+};
+
+/* ---------- datos de la fiesta ---------- */
+const EV_FIELDS = { evFecha: "fecha", evHora: "horaInicio", evHorario: "horario", evLugar: "lugar", evMapa: "mapa", evDressT: "dressTitulo", evDressX: "dressTexto", evRegalo: "regalo" };
+const EV_DEFAULTS = { fecha: "2026-12-07", lugar: "Piscina Herrera" };
+async function loadEvent(){
+  let ev = { ...EV_DEFAULTS };
+  try { const s = await getDoc(doc(db, "config", "evento")); if (s.exists()) ev = { ...ev, ...s.data() }; } catch (e) {}
+  Object.entries(EV_FIELDS).forEach(([id, k]) => { $(id).value = ev[k] || ""; });
+}
+$("evForm").onsubmit = async e => {
+  e.preventDefault();
+  const m = $("evMsg"); m.className = "msg"; m.textContent = "Guardando…";
+  const data = {};
+  Object.entries(EV_FIELDS).forEach(([id, k]) => { data[k] = $(id).value.trim(); });
+  if (!data.fecha){ m.className = "msg err"; m.textContent = "Escribe la fecha de la fiesta."; return; }
+  if (data.mapa && !/^https?:\/\//.test(data.mapa)){ m.className = "msg err"; m.textContent = "El link de ubicación debe empezar por https://"; return; }
+  try { await setDoc(doc(db, "config", "evento"), data); m.className = "msg ok"; m.textContent = "Cambios guardados. Ya se ven en la invitación."; }
+  catch (err) { m.className = "msg err"; m.textContent = "No se pudo guardar. Revisa tu conexión y las reglas de Firestore."; }
+};
+
+/* ---------- fotos ---------- */
+function renderPhotos(snap){
+  $("thumbs1").innerHTML = ""; $("thumbs2").innerHTML = "";
+  snap.forEach(d => {
+    const x = d.data(), box = $("thumbs" + (x.grupo === 2 ? 2 : 1));
+    const f = document.createElement("figure");
+    const img = new Image(); img.src = x.data; img.alt = "Foto";
+    const del = document.createElement("button"); del.type = "button"; del.textContent = "×"; del.setAttribute("aria-label", "Quitar foto");
+    del.onclick = async () => {
+      if (!confirm("¿Quitar esta foto de la invitación?")) return;
+      try { await deleteDoc(doc(db, "fotos", d.id)); } catch (e) { toast("No se pudo quitar la foto."); }
+    };
+    f.append(img, del); box.append(f);
+  });
+  ["thumbs1", "thumbs2"].forEach(id => { if (!$(id).children.length) $(id).innerHTML = '<p class="sub" style="grid-column:1/-1;margin:0">Sin fotos todavía.</p>'; });
+}
+function compress(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let max = 1100, q = 0.8, out = "";
+      for (let tries = 0; tries < 6; tries++){
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        out = c.toDataURL("image/jpeg", q);
+        if (out.length < 800000) return resolve(out);
+        max = Math.round(max * 0.8); q = Math.max(0.6, q - 0.05);
+      }
+      out.length < 1000000 ? resolve(out) : reject(new Error("grande"));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("formato")); };
+    img.src = url;
+  });
+}
+let upGroup = 1;
+document.querySelectorAll("[data-up]").forEach(b => b.onclick = () => { upGroup = Number(b.dataset.up); $("photoFile").click(); });
+$("photoFile").onchange = async e => {
+  const files = [...e.target.files]; e.target.value = "";
+  if (!files.length) return;
+  const m = $("photoMsg"); let ok = 0, bad = 0;
+  for (const [i, f] of files.entries()){
+    m.className = "msg"; m.textContent = `Subiendo foto ${i + 1} de ${files.length}…`;
+    try { await addDoc(collection(db, "fotos"), { grupo: upGroup, orden: Date.now(), data: await compress(f) }); ok++; }
+    catch (err) { bad++; }
+  }
+  m.className = bad ? "msg err" : "msg ok";
+  m.textContent = (ok ? `${ok} ${ok === 1 ? "foto subida" : "fotos subidas"}.` : "") + (bad ? ` ${bad} no se pudieron subir (usa fotos JPG o PNG).` : "");
+};
+
+/* ---------- canción ---------- */
+fetch("cancion.mp3", { method: "HEAD" })
+  .then(r => { $("songStatus").textContent = r.ok ? "✓ La canción está cargada y suena en la invitación." : "No hay canción. Para agregarla, sube a GitHub un archivo llamado cancion.mp3 (en minúsculas, sin tilde)."; })
+  .catch(() => { $("songStatus").textContent = "No hay canción. Para agregarla, sube a GitHub un archivo llamado cancion.mp3 (en minúsculas, sin tilde)."; });
+</script>
+</body>
+</html>
