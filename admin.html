@@ -110,6 +110,9 @@ textarea{width:100%;min-height:80px;resize:vertical}
 .thumbs button{position:absolute;top:4px;right:4px;width:28px;height:28px;padding:0;justify-content:center;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:1rem}
 .carr h3{margin:0;font-size:1rem}
 .carr p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+.danger{border-color:color-mix(in srgb,var(--no) 40%,var(--line))}
+.danger-btn{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.danger-btn:hover{background:color-mix(in srgb,var(--no) 10%,transparent)}
 </style>
 </head>
 <body>
@@ -195,6 +198,13 @@ textarea{width:100%;min-height:80px;resize:vertical}
       <label for="tpl">Usa {nombre}, {link} y {codigo}</label>
       <textarea id="tpl"></textarea>
     </details>
+  </section>
+
+  <section class="panel danger">
+    <h2>Eliminar todas las invitaciones</h2>
+    <p class="msg" style="color:var(--muted);margin:0 0 10px">Borra todos los invitados y sus respuestas. Los links que ya enviaste dejarán de funcionar. Antes de borrar se descarga un Excel de respaldo. Los datos de la fiesta y las fotos no se borran.</p>
+    <button class="danger-btn" id="wipeBtn">Eliminar todas las invitaciones</button>
+    <p class="msg" id="wipeMsg"></p>
   </section>
   </div>
 
@@ -436,7 +446,7 @@ $("tplBtn").onclick = () => {
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Invitados");
   XLSX.writeFile(wb, "plantilla-invitados-XV.xlsx");
 };
-$("exportBtn").onclick = () => {
+function exportAll(filename){
   const rows = [["Nombre","Código","Pases","Celular","Respuesta","Personas","Canción","Mensaje","Fecha de respuesta","Link"]];
   Object.keys(guests).sort((a, b) => guests[a].nombre.localeCompare(guests[b].nombre, "es")).forEach(c => {
     const g = guests[c], a = answers[c], s = status(c);
@@ -446,7 +456,31 @@ $("exportBtn").onclick = () => {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws["!cols"] = [{ wch: 28 }, { wch: 9 }, { wch: 6 }, { wch: 15 }, { wch: 13 }, { wch: 9 }, { wch: 28 }, { wch: 40 }, { wch: 20 }, { wch: 40 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Invitados");
-  XLSX.writeFile(wb, "confirmaciones-XV-Maria-Fernanda.xlsx");
+  XLSX.writeFile(wb, filename || "confirmaciones-XV-Maria-Fernanda.xlsx");
+}
+$("exportBtn").onclick = () => exportAll();
+
+/* ---------- eliminar todo ---------- */
+$("wipeBtn").onclick = async () => {
+  const m = $("wipeMsg"), codes = Object.keys(guests);
+  if (!codes.length){ m.className = "msg"; m.textContent = "No hay invitaciones para eliminar."; return; }
+  const t = prompt(`Vas a eliminar ${codes.length} invitaciones y todas sus respuestas. Los links enviados dejarán de funcionar.\n\nPara confirmar escribe: BORRAR`);
+  if ((t || "").trim().toUpperCase() !== "BORRAR"){ m.className = "msg"; m.textContent = "No se borró nada."; return; }
+  try { exportAll("respaldo-invitados-XV-" + new Date().toISOString().slice(0, 10) + ".xlsx"); }
+  catch (e) {
+    if (!confirm("No se pudo descargar el Excel de respaldo. ¿Quieres borrar de todas formas?")){ m.className = "msg"; m.textContent = "No se borró nada."; return; }
+  }
+  $("wipeBtn").disabled = true; m.className = "msg"; m.textContent = "Eliminando…";
+  try {
+    for (let i = 0; i < codes.length; i += 200){
+      const batch = writeBatch(db);
+      codes.slice(i, i + 200).forEach(c => { batch.delete(doc(db, "respuestas", c)); batch.delete(doc(db, "invitados", c)); });
+      await batch.commit();
+    }
+    m.className = "msg ok"; m.textContent = `Listo: se eliminaron ${codes.length} invitaciones y sus respuestas.`;
+  } catch (e) {
+    m.className = "msg err"; m.textContent = "No se pudo terminar de borrar. Revisa tu conexión e inténtalo de nuevo.";
+  } finally { $("wipeBtn").disabled = false; }
 };
 
 /* ---------- vistas ---------- */
