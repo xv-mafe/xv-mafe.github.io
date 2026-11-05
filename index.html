@@ -66,9 +66,11 @@ section{position:relative}
 .bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--rose);border-radius:2px}
 .play{margin:12px auto 0;width:46px;height:46px;border-radius:50%;border:0;background:var(--rose);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px -8px rgba(142,63,88,.8)}
 .play:focus-visible,.btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
-.to{margin:26px 0 0}
-.to small{display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.to b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.45rem;font-weight:600;color:var(--rose-dk);line-height:1.3}
+.to{margin:26px -4% 0;position:relative;z-index:3;padding:8px 18px 9px;border-radius:14px;
+  background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  border:1px solid rgba(201,162,74,.45)}
+.to small{display:block;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.to b{display:block;margin-top:1px;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.25rem;font-weight:600;color:var(--rose-dk);line-height:1.2;text-wrap:balance}
 .intro-sec{padding:18px 32px 6px;text-align:center}
 .flourish{display:block;width:150px;height:auto;margin:10px auto 10px}
 .flourish.b{margin:10px auto 0;transform:scaleY(-1)}
@@ -175,7 +177,7 @@ section{position:relative}
     <p class="sub caps">Mis quince años</p>
 
     <div class="player" id="player" hidden>
-      <p>Toca para pausar o reproducir la canción</p>
+      <p>Toca para pausar la canción</p>
       <div class="bar"><i id="prog"></i></div>
       <button class="play" id="playBtn" aria-label="Reproducir canción">
         <svg id="playIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l14 8-14 8z"/></svg>
