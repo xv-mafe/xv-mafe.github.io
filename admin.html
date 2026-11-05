@@ -113,11 +113,18 @@ textarea{width:100%;min-height:80px;resize:vertical}
 .danger{border-color:color-mix(in srgb,var(--no) 40%,var(--line))}
 .danger-btn{background:transparent;color:var(--no);border:1.5px solid var(--no)}
 .danger-btn:hover{background:color-mix(in srgb,var(--no) 10%,transparent)}
+.boot{min-height:70vh;display:flex;gap:12px;align-items:center;justify-content:center;color:var(--muted)}
+.boot[hidden]{display:none}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--wine);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loadingrow td{color:var(--muted);text-align:center;padding:22px}
 </style>
 </head>
 <body>
 
-<div class="login" id="loginView">
+<div class="boot" id="bootView" role="status"><span class="spin" aria-hidden="true"></span>Cargando panel…</div>
+
+<div class="login" id="loginView" hidden>
   <h1 style="font-family:Allura,cursive;font-weight:400;font-size:3rem;color:var(--wine);margin:0">Panel de invitaciones</h1>
   <p>XV años de María Fernanda. Entra con tu cuenta de Google para ver las confirmaciones.</p>
   <button class="primary" id="loginBtn">Entrar con Google</button>
@@ -254,13 +261,17 @@ textarea{width:100%;min-height:80px;resize:vertical}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, writeBatch, deleteDoc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, writeBatch, deleteDoc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, ADMIN_EMAILS } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app), db = getFirestore(app);
+const auth = getAuth(app);
+// Guarda una copia en el navegador: al recargar, los datos aparecen al instante y luego se actualizan.
+let db;
+try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+catch (e) { db = getFirestore(app); }
 const $ = id => document.getElementById(id);
-let guests = {}, answers = {}, filter = "all", unsubs = [];
+let guests = {}, answers = {}, filter = "all", unsubs = [], ready = { g: false, a: false };
 
 const DEFAULT_TPL = "¡Hola {nombre}! 💌 Con mucha alegría te invito a celebrar mis XV años. Abre tu invitación aquí: {link}";
 try { $("tpl").value = localStorage.getItem("xv-tpl") || DEFAULT_TPL; } catch (e) { $("tpl").value = DEFAULT_TPL; }
@@ -275,14 +286,16 @@ $("loginBtn").onclick = async () => {
 $("logoutBtn").onclick = () => signOut(auth);
 onAuthStateChanged(auth, user => {
   unsubs.forEach(u => u()); unsubs = [];
+  $("bootView").hidden = true;
+  ready = { g: false, a: false }; render();
   const ok = user && ADMIN_EMAILS.map(e => e.toLowerCase()).includes((user.email || "").toLowerCase());
   $("loginView").hidden = !!ok; $("appView").hidden = !ok;
   if (user && !ok){ $("loginMsg").className = "msg err"; $("loginMsg").textContent = "El correo " + user.email + " no tiene acceso a este panel."; signOut(auth); return; }
   if (!ok) return;
   $("userEmail").textContent = user.email;
   const fail = () => toast("No se pudieron leer los datos. Revisa las reglas de Firestore.");
-  unsubs.push(onSnapshot(collection(db, "invitados"), s => { guests = {}; s.forEach(d => guests[d.id] = d.data()); render(); }, fail));
-  unsubs.push(onSnapshot(collection(db, "respuestas"), s => { answers = {}; s.forEach(d => answers[d.id] = d.data()); render(); }, fail));
+  unsubs.push(onSnapshot(collection(db, "invitados"), s => { guests = {}; s.forEach(d => guests[d.id] = d.data()); ready.g = true; render(); }, fail));
+  unsubs.push(onSnapshot(collection(db, "respuestas"), s => { answers = {}; s.forEach(d => answers[d.id] = d.data()); ready.a = true; render(); }, fail));
   unsubs.push(onSnapshot(query(collection(db, "fotos"), orderBy("orden")), renderPhotos, fail));
   loadEvent();
 });
@@ -310,6 +323,14 @@ async function copy(text){
 
 /* ---------- pintar ---------- */
 function render(){
+  if (!ready.g || !ready.a){
+    ["sYes","sNo","sWait","sTotal"].forEach(id => $(id).textContent = "…");
+    ["sYesInv","sWaitP","sInv"].forEach(id => $(id).textContent = "");
+    ["bYes","bNo","bWait"].forEach(id => $(id).style.width = "0");
+    $("tbody").innerHTML = '<tr class="loadingrow"><td colspan="6">Cargando invitados…</td></tr>';
+    $("songs").innerHTML = ""; $("notes").innerHTML = "";
+    return;
+  }
   const codes = Object.keys(guests);
   let yesP = 0, yesI = 0, noI = 0, waitI = 0, waitP = 0, total = 0;
   codes.forEach(c => {
