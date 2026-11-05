@@ -31,7 +31,7 @@ section{position:relative}
 .center{text-align:center}
 .script{font-family:"Great Vibes","Brush Script MT",cursive;font-weight:400}
 .caps{text-transform:uppercase;letter-spacing:.32em;font-weight:500}
-.gold-text{background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.gold-text{-webkit-box-decoration-break:clone;box-decoration-break:clone;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .bfly{position:absolute;pointer-events:none;z-index:2;animation:flutter 5s ease-in-out infinite}
 .bfly:nth-of-type(2n){animation-duration:6.5s;animation-delay:-2s}
 @keyframes flutter{0%,100%{transform:translateY(0) rotate(var(--r,0deg))}50%{transform:translateY(-8px) rotate(calc(var(--r,0deg) + 4deg))}}
@@ -41,7 +41,7 @@ section{position:relative}
   background:var(--blush) var(--fondo) center/cover no-repeat;padding:24px;text-align:center;transition:opacity .9s ease}
 .cover::before{content:"";position:absolute;inset:0;background:rgba(253,245,247,.55)}
 .cover > *{position:relative}
-.cover .name{font-size:clamp(3.4rem,15vw,4.6rem);line-height:1.05;margin:0;padding:0 .1em}
+.cover .name{font-size:clamp(3.4rem,15vw,4.6rem);line-height:1.12;margin:0 -.5em;padding:.12em .5em .22em}
 .cover .sub{margin:0 0 14px;font-size:.78rem;color:var(--rose)}
 .envelope{border:0;background:none;padding:0;cursor:pointer;width:min(80vw,330px);animation:breathe 2.6s ease-in-out infinite}
 .envelope img{width:100%;height:auto;display:block}
@@ -58,7 +58,7 @@ section{position:relative}
 .hero{aspect-ratio:1152/2064;min-height:620px;background:var(--fondo) center/cover no-repeat;padding:64px 17% 30px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .sun{width:92px;height:auto;animation:spin 60s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.hero .name{font-size:clamp(3.1rem,14vw,4.2rem);line-height:1;margin:6px 0 2px}
+.hero .name{font-size:clamp(3.1rem,14vw,4.2rem);line-height:1.12;margin:2px -.5em 0;padding:.12em .5em .22em}
 .hero .sub{margin:0;font-size:.74rem;color:var(--muted)}
 .player{margin:24px 0 0;width:100%;max-width:230px}
 .player p{margin:0 0 8px;font-size:.7rem;color:var(--gold-dk);letter-spacing:.06em}
