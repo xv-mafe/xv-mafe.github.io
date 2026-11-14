@@ -118,6 +118,13 @@ textarea{width:100%;min-height:80px;resize:vertical}
 .spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--wine);animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .loadingrow td{color:var(--muted);text-align:center;padding:22px}
+.loginbox{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:14px}
+.loginbox label{margin-top:12px}
+.loginbox label:first-of-type{margin-top:0}
+.loginbox input{width:100%}
+.loginbox .pass{display:flex;gap:6px}
+.loginbox .pass input{flex:1}
+.loginbox .primary{width:100%;justify-content:center;margin-top:16px;padding:12px}
 </style>
 </head>
 <body>
@@ -126,9 +133,16 @@ textarea{width:100%;min-height:80px;resize:vertical}
 
 <div class="login" id="loginView" hidden>
   <h1 style="font-family:Allura,cursive;font-weight:400;font-size:3rem;color:var(--wine);margin:0">Panel de invitaciones</h1>
-  <p>XV años de María Fernanda. Entra con tu cuenta de Google para ver las confirmaciones.</p>
-  <button class="primary" id="loginBtn">Entrar con Google</button>
-  <p class="msg" id="loginMsg"></p>
+  <p>XV años de María Fernanda</p>
+  <form id="loginForm" class="loginbox" autocomplete="on">
+    <label for="lUser">Usuario</label>
+    <input id="lUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ej. luis" required>
+    <label for="lPass">Contraseña</label>
+    <div class="pass"><input id="lPass" name="password" type="password" autocomplete="current-password" required>
+      <button type="button" class="ghost small" id="showPass" aria-label="Mostrar contraseña">Ver</button></div>
+    <button class="primary" type="submit" id="loginBtn">Entrar</button>
+    <p class="msg" id="loginMsg" role="status"></p>
+  </form>
 </div>
 
 <main class="wrap" id="appView" hidden>
@@ -260,7 +274,7 @@ textarea{width:100%;min-height:80px;resize:vertical}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, writeBatch, deleteDoc, getDoc, setDoc, addDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, ADMIN_EMAILS } from "./firebase-config.js";
 
@@ -278,21 +292,40 @@ try { $("tpl").value = localStorage.getItem("xv-tpl") || DEFAULT_TPL; } catch (e
 $("tpl").oninput = () => { try { localStorage.setItem("xv-tpl", $("tpl").value); } catch (e) {} render(); };
 
 /* ---------- sesión ---------- */
-$("loginBtn").onclick = async () => {
-  $("loginMsg").textContent = "";
-  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-  catch (e) { $("loginMsg").className = "msg err"; $("loginMsg").textContent = "No se pudo iniciar sesión. Inténtalo de nuevo."; }
+// Los usuarios se crean en Firebase como usuario@xv-mafe.app (el correo no existe, solo sirve de nombre).
+const DOMAIN = "xv-mafe.app";
+const toEmail = u => u.includes("@") ? u.trim().toLowerCase() : u.trim().toLowerCase().replace(/\s+/g, ".") + "@" + DOMAIN;
+const isAllowed = email => {
+  email = (email || "").toLowerCase();
+  return email.endsWith("@" + DOMAIN) || ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email);
+};
+$("showPass").onclick = () => {
+  const p = $("lPass"), show = p.type === "password";
+  p.type = show ? "text" : "password"; $("showPass").textContent = show ? "Ocultar" : "Ver";
+};
+$("loginForm").onsubmit = async e => {
+  e.preventDefault();
+  const m = $("loginMsg"); m.className = "msg"; m.textContent = "Entrando…";
+  $("loginBtn").disabled = true;
+  try { await signInWithEmailAndPassword(auth, toEmail($("lUser").value), $("lPass").value); m.textContent = ""; }
+  catch (err) {
+    m.className = "msg err";
+    const c = err && err.code || "";
+    m.textContent = c.includes("too-many-requests") ? "Demasiados intentos. Espera unos minutos y vuelve a intentar."
+      : c.includes("network") ? "Sin conexión. Revisa tu internet."
+      : "Usuario o contraseña incorrectos.";
+  } finally { $("loginBtn").disabled = false; }
 };
 $("logoutBtn").onclick = () => signOut(auth);
 onAuthStateChanged(auth, user => {
   unsubs.forEach(u => u()); unsubs = [];
   $("bootView").hidden = true;
   ready = { g: false, a: false }; render();
-  const ok = user && ADMIN_EMAILS.map(e => e.toLowerCase()).includes((user.email || "").toLowerCase());
+  const ok = user && isAllowed(user.email);
   $("loginView").hidden = !!ok; $("appView").hidden = !ok;
-  if (user && !ok){ $("loginMsg").className = "msg err"; $("loginMsg").textContent = "El correo " + user.email + " no tiene acceso a este panel."; signOut(auth); return; }
+  if (user && !ok){ $("loginMsg").className = "msg err"; $("loginMsg").textContent = "Ese usuario no tiene acceso a este panel."; signOut(auth); return; }
   if (!ok) return;
-  $("userEmail").textContent = user.email;
+  $("userEmail").textContent = (user.email || "").endsWith("@" + DOMAIN) ? user.email.split("@")[0] : user.email;
   const fail = () => toast("No se pudieron leer los datos. Revisa las reglas de Firestore.");
   unsubs.push(onSnapshot(collection(db, "invitados"), s => { guests = {}; s.forEach(d => guests[d.id] = d.data()); ready.g = true; render(); }, fail));
   unsubs.push(onSnapshot(collection(db, "respuestas"), s => { answers = {}; s.forEach(d => answers[d.id] = d.data()); ready.a = true; render(); }, fail));
